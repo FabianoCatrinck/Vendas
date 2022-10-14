@@ -1,0 +1,99 @@
+object DM: TDM
+  OldCreateOrder = False
+  Height = 280
+  Width = 415
+  object Connection: TFDConnection
+    Params.Strings = (
+      'Database=vendas'
+      'User_Name=root'
+      'Password=masterkey'
+      'Server=localhost'
+      'DriverID=MySQL')
+    Connected = True
+    Left = 184
+    Top = 152
+  end
+  object qryProdutos: TFDQuery
+    Connection = Connection
+    Transaction = Transaction
+    SQL.Strings = (
+      'select *'
+      'from produtos')
+    Left = 288
+    Top = 120
+  end
+  object qryPedidos: TFDQuery
+    Connection = Connection
+    Transaction = Transaction
+    SQL.Strings = (
+      'select *'
+      'from pedidos')
+    Left = 80
+    Top = 104
+  end
+  object qryClientes: TFDQuery
+    Connection = Connection
+    Transaction = Transaction
+    SQL.Strings = (
+      'select *'
+      'from clientes')
+    Left = 160
+    Top = 40
+  end
+  object Transaction: TFDTransaction
+    Connection = Connection
+    Left = 296
+    Top = 72
+  end
+  object qryConsultaPedidos: TFDQuery
+    Connection = Connection
+    Transaction = Transaction
+    SQL.Strings = (
+      
+        'select pd.codigo, pd.descricao, p.quantidade, p.valorUnitario, p' +
+        '.valorTotal'
+      'from pedidos p'
+      'inner join produtos pd on pd.codigo = p.codigoProduto')
+    Left = 104
+    Top = 192
+    object qryConsultaPedidoscodigo: TIntegerField
+      DisplayLabel = 'C'#243'digo do Produto'
+      FieldName = 'codigo'
+      Origin = 'codigo'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
+      Required = True
+    end
+    object qryConsultaPedidosdescricao: TStringField
+      AutoGenerateValue = arDefault
+      DisplayLabel = 'Descri'#231#227'o do Produto'
+      FieldName = 'descricao'
+      Origin = 'descricao'
+      Size = 45
+    end
+    object qryConsultaPedidosquantidade: TIntegerField
+      AutoGenerateValue = arDefault
+      DisplayLabel = 'Quantidade'
+      FieldName = 'quantidade'
+      Origin = 'quantidade'
+    end
+    object qryConsultaPedidosvalorUnitario: TSingleField
+      AutoGenerateValue = arDefault
+      DisplayLabel = 'Valor Unit'#225'rio'
+      FieldName = 'valorUnitario'
+      Origin = 'valorUnitario'
+      currency = True
+    end
+    object qryConsultaPedidosvalorTotal: TSingleField
+      AutoGenerateValue = arDefault
+      DisplayLabel = 'Valor Total'
+      FieldName = 'valorTotal'
+      Origin = 'valorTotal'
+      currency = True
+    end
+  end
+  object dtsConsultaPedidos: TDataSource
+    DataSet = qryConsultaPedidos
+    Left = 32
+    Top = 176
+  end
+end

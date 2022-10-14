@@ -1,0 +1,594 @@
+unit uVendas;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, Data.SqlExpr,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Param,
+  FireDAC.Stan.Error, FireDAC.DatS, FireDAC.Phys.Intf, FireDAC.DApt.Intf,
+  FireDAC.Stan.Async, FireDAC.DApt, Data.DB, FireDAC.Comp.DataSet,
+  FireDAC.Comp.Client, Vcl.Grids, Vcl.DBGrids, Vcl.ComCtrls, Vcl.Mask,
+  Datasnap.DBClient;
+
+type
+  TfrmPrincipalVendas = class(TForm)
+    grpProduto: TGroupBox;
+    lblCodigoProduto: TLabel;
+    lblDescricao: TLabel;
+    Label1: TLabel;
+    Label2: TLabel;
+    edtCodigo: TEdit;
+    edtDescricao: TEdit;
+    edtQuantidade: TEdit;
+    edtValor: TEdit;
+    btnAdicionar: TSpeedButton;
+    grdPedidos: TDBGrid;
+    lblProdutosIncluidos: TLabel;
+    StatusBar: TStatusBar;
+    spdGravarPedido: TSpeedButton;
+    grpDadosGeraisPedidos: TGroupBox;
+    Label3: TLabel;
+    edtCodigoCliente: TEdit;
+    Label4: TLabel;
+    edtNomeCliente: TEdit;
+    Label5: TLabel;
+    edtData: TMaskEdit;
+    Label6: TLabel;
+    edtNumeroPedido: TEdit;
+    spdCarregarPedido: TSpeedButton;
+    spdCancelarPedido: TSpeedButton;
+    cdsProdutos: TClientDataSet;
+    dtsProdutos: TDataSource;
+    cdsProdutoscodigoProduto: TIntegerField;
+    cdsProdutosnomeProduto: TStringField;
+    cdsProdutosquantidade: TIntegerField;
+    cdsProdutosvalorUnitario: TCurrencyField;
+    cdsProdutosvalorTotal: TCurrencyField;
+    cdsProdutoscodigo: TIntegerField;
+    procedure FormShow(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure edtCodigoChange(Sender: TObject);
+    procedure FormKeyPress(Sender: TObject; var Key: Char);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure btnAdicionarClick(Sender: TObject);
+    procedure grdPedidosKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure spdGravarPedidoClick(Sender: TObject);
+    procedure spdCancelarPedidoClick(Sender: TObject);
+    procedure spdCarregarPedidoClick(Sender: TObject);
+    procedure edtCodigoClienteChange(Sender: TObject);
+  private
+    { Private declarations }
+    FCodigoPedidoProdutos: Integer;
+    procedure AbrirTabelas();
+    procedure FecharTabelas();
+    procedure AdicionarPedidosProdutos(pCodigoProduto, pQuantidade, pValorUnitario: String);
+    procedure LimparCamposProdutos();
+    procedure LimparCamposGeraisDoPedido();
+    procedure AtualizarPedidosProdutos(pCodigoPedido, pQuantidade, pValorUnitario: String);
+    procedure ApagarPedido(pCodigoPedido: Integer);
+    function ObterTotalDoPedido(): String;
+    procedure GravarDadosGeraisDoPedido();
+    procedure GravarProdutosDoPedido();
+    procedure CancelarPedido(pNumeroPedido: String);
+    procedure CarregarPedido(pNumeroPedido: String);
+    function ValidarCamposProdutos(): Boolean;
+    function ValidarDadosGerais(): Boolean;
+  public
+    { Public declarations }
+  end;
+
+var
+  frmPrincipalVendas: TfrmPrincipalVendas;
+
+implementation
+
+{$R *.dfm}
+
+uses DataModule;
+
+procedure TfrmPrincipalVendas.AbrirTabelas();
+begin
+  DM.Connection.Open;
+  DM.qryProdutos.Open;
+  DM.qryClientes.Open;
+  DM.qryPedidos.Open;
+  DM.qryConsultaPedidos.Open;
+
+  if not cdsProdutos.Active then
+    cdsProdutos.CreateDataSet;
+end;
+
+procedure TfrmPrincipalVendas.AdicionarPedidosProdutos(pCodigoProduto, pQuantidade,
+  pValorUnitario: String);
+begin
+  cdsProdutos.Append;
+  cdsProdutos.FieldByName('codigoProdutos').AsString := pCodigoProduto;
+  cdsProdutos.FieldByName('quantidade').AsString := pQuantidade;
+  cdsProdutos.FieldByName('valorUnitario').AsFloat := StrToFloat(pValorUnitario);
+  cdsProdutos.FieldByName('valorTotal').AsFloat := cdsProdutos.FieldByName('quantidade').AsInteger *
+                                                   cdsProdutos.FieldByName('valorUnitario').AsFloat;
+  cdsProdutos.Post;
+end;
+
+procedure TfrmPrincipalVendas.ApagarPedido(pCodigoPedido: Integer);
+var
+  lQryApagaPedido: TFDQuery;
+begin
+  lQryApagaPedido := TFDQuery.Create(Self);
+
+  try
+    lQryApagaPedido.Connection := DM.Connection;
+    lQryApagaPedido.Transaction := DM.Transaction;
+
+    if not lQryApagaPedido.Transaction.Active then
+      lQryApagaPedido.Transaction.StartTransaction;
+
+    lQryApagaPedido.SQL.Add('delete from pedidos ');
+    lQryApagaPedido.SQL.Add('where codigo = :pCodigoPedido');
+
+    lQryApagaPedido.ParamByName('pCodigoPedido').AsInteger := pCodigoPedido;
+
+    try
+      lQryApagaPedido.ExecSQL();
+      lQryApagaPedido.Transaction.Commit;
+      DM.qryConsultaPedidos.Refresh;
+    except
+      lQryApagaPedido.Transaction.Rollback;
+      raise Exception.Create('Ocorreu o erro ao apagar o pedido.');
+    end;
+  finally
+    FreeAndNil(lQryApagaPedido);
+
+  end;
+end;
+
+procedure TfrmPrincipalVendas.AtualizarPedidosProdutos(pCodigoPedido, pQuantidade,
+  pValorUnitario: String);
+begin
+  cdsProdutos.Locate('codigo', pCodigoPedido, []);
+
+  cdsProdutos.Edit;
+  cdsProdutos.FieldByName('Quantidade').AsInteger := StrToInt(pQuantidade);
+  cdsProdutos.FieldByName('ValorUnitario').AsFloat := StrToFloat(pValorUnitario);
+  cdsProdutos.FieldByName('ValorTotal').AsFloat := cdsProdutos.FieldByName('Quantidade').AsInteger *
+                                                   cdsProdutos.FieldByName('ValorUnitario').AsFloat;
+  cdsProdutos.Post;
+  LimparCamposProdutos();
+end;
+
+
+procedure TfrmPrincipalVendas.btnAdicionarClick(Sender: TObject);
+begin
+  if ValidarCamposProdutos() then
+    if FCodigoPedidoProdutos > 0 then
+      AtualizarPedidosProdutos(IntToStr(FCodigoPedidoProdutos), edtQuantidade.Text, edtValor.Text)
+    else
+      AdicionarPedidosProdutos(edtCodigo.Text, edtQuantidade.Text, edtValor.Text);
+
+  StatusBar.SimpleText := 'Total do pedido: ' + ObterTotalDoPedido();
+  edtCodigo.SetFocus;
+end;
+
+procedure TfrmPrincipalVendas.CancelarPedido(pNumeroPedido: String);
+var
+  lQryAtualizaPedido: TFDQuery;
+begin
+  lQryAtualizaPedido := TFDQuery.Create(Self);
+
+  try
+    lQryAtualizaPedido.Connection := DM.Connection;
+    lQryAtualizaPedido.Transaction := DM.Transaction;
+
+    if not lQryAtualizaPedido.Transaction.Active then
+      lQryAtualizaPedido.Transaction.StartTransaction;
+
+    lQryAtualizaPedido.SQL.Add('update pedidosDadosGerais set dataHoraCancelamento = NOW()');
+    lQryAtualizaPedido.SQL.Add('where numeroPedido = :pCodigoPedido');
+
+    lQryAtualizaPedido.ParamByName('pCodigoPedido').AsString := pNumeroPedido;
+
+    try
+      lQryAtualizaPedido.ExecSQL();
+      lQryAtualizaPedido.Transaction.Commit;
+      StatusBar.SimpleText := 'Pedido Cancelado';
+    except
+      lQryAtualizaPedido.Transaction.Rollback;
+      raise Exception.Create('Ocorreu o erro ao cancelar o pedido.');
+    end;
+  finally
+    FreeAndNil(lQryAtualizaPedido);
+  end;
+end;
+
+procedure TfrmPrincipalVendas.CarregarPedido(pNumeroPedido: String);
+var
+  lValorTotal: Double;
+begin
+  DM.qryPedidosDadosGerais.Close;
+  DM.qryPedidosDadosGerais.ParamByName('pNumeroPedido').AsString := pNumeroPedido;
+  DM.qryPedidosDadosGerais.Open;
+
+  edtData.Text := DM.qryPedidosDadosGerais.FieldByName('dataEmissao').AsString;
+  edtCodigoCliente.Text := DM.qryPedidosDadosGerais.FieldByName('codigoCliente').AsString;
+  edtNomeCliente.Text := DM.qryPedidosDadosGerais.FieldByName('nome').AsString;
+
+  if not cdsProdutos.Active then
+    cdsProdutos.CreateDataSet
+  else
+    cdsProdutos.EmptyDataSet;
+
+  cdsProdutos.DisableControls;
+  DM.qryConsultaPedidos.Close;
+  DM.qryConsultaPedidos.ParamByName('pNumeroPedido').AsString := pNumeroPedido;
+  DM.qryConsultaPedidos.Open;
+
+  lValorTotal := 0;
+
+  while not DM.qryConsultaPedidos.Eof do
+  begin
+    cdsProdutos.Append;
+    cdsProdutos.FieldByName('codigo').AsString := DM.qryConsultaPedidos.FieldByName('codigoPedido').AsString;
+    cdsProdutos.FieldByName('codigoProduto').AsString := DM.qryConsultaPedidos.FieldByName('codigo').AsString;
+    cdsProdutos.FieldByName('nomeProduto').AsString := DM.qryConsultaPedidos.FieldByName('descricao').AsString;
+    cdsProdutos.FieldByName('quantidade').AsString := DM.qryConsultaPedidos.FieldByName('quantidade').AsString;
+    cdsProdutos.FieldByName('valorUnitario').AsString := DM.qryConsultaPedidos.FieldByName('valorUnitario').AsString;
+    cdsProdutos.FieldByName('valorTotal').AsString := DM.qryConsultaPedidos.FieldByName('valorTotal').AsString;
+    cdsProdutos.Post;
+    lValorTotal := lValorTotal + cdsProdutos.FieldByName('valorTotal').AsFloat;
+    DM.qryConsultaPedidos.Next;
+  end;
+
+  StatusBar.SimpleText := 'Total do pedido: ' + FormatFloat('0,00', lValorTotal);
+
+  if DM.qryPedidosDadosGerais.FieldByName('dataHoraCancelamento').AsFloat > 0 then
+    StatusBar.SimpleText := StatusBar.SimpleText + ' - Pedido cancelado em ' + DM.qryPedidosDadosGerais.FieldByName('dataHoraCancelamento').AsString
+  else
+    StatusBar.SimpleText := StatusBar.SimpleText + ' - Pedido ativo';
+
+  cdsProdutos.First;
+  cdsProdutos.EnableControls;
+end;
+
+procedure TfrmPrincipalVendas.edtCodigoChange(Sender: TObject);
+begin
+  if edtCodigo.Text <> '' then
+    if DM.qryProdutos.Locate('codigo', edtCodigo.Text, []) then
+    begin
+      edtDescricao.Text := DM.qryProdutos.FieldByName('descricao').AsString;
+      edtValor.Text := FormatFloat('0.00', DM.qryProdutos.FieldByName('preco').AsFloat);
+    end;
+end;
+
+procedure TfrmPrincipalVendas.edtCodigoClienteChange(Sender: TObject);
+begin
+  if edtCodigoCliente.Text <> '' then
+    if DM.qryClientes.Locate('codigo', edtCodigoCliente.Text, []) then
+      edtNomeCliente.Text := DM.qryClientes.FieldByName('nome').AsString;
+end;
+
+procedure TfrmPrincipalVendas.FecharTabelas();
+begin
+  DM.qryProdutos.Close;
+  DM.qryClientes.Close;
+  DM.qryPedidos.Close;
+  DM.qryConsultaPedidos.Close;
+  DM.Connection.Close;
+end;
+
+procedure TfrmPrincipalVendas.FormClose(Sender: TObject;
+  var Action: TCloseAction);
+begin
+  FecharTabelas();
+end;
+
+procedure TfrmPrincipalVendas.FormKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  if Key = VK_RETURN then
+    Perform(WM_NEXTDLGCTL, 0, 0);
+end;
+
+procedure TfrmPrincipalVendas.FormKeyPress(Sender: TObject; var Key: Char);
+begin
+  if (Key = #13) then  //#13 enter
+  begin
+    Key := #0;
+    Perform(WM_NEXTDLGCTL, 0, 0);
+  end;
+end;
+
+procedure TfrmPrincipalVendas.FormShow(Sender: TObject);
+begin
+  AbrirTabelas();
+  FCodigoPedidoProdutos := -1;
+  StatusBar.SimpleText := 'Total do pedido: 0,00';
+  edtData.SetFocus;
+end;
+
+procedure TfrmPrincipalVendas.GravarDadosGeraisDoPedido();
+var
+  lQryAdicionaPedido: TFDQuery;
+begin
+  lQryAdicionaPedido := TFDQuery.Create(Self);
+
+  try
+    lQryAdicionaPedido.Connection := DM.Connection;
+    lQryAdicionaPedido.Transaction := DM.Transaction;
+
+    if not lQryAdicionaPedido.Transaction.Active then
+      lQryAdicionaPedido.Transaction.StartTransaction;
+
+    lQryAdicionaPedido.SQL.Add('insert into pedidosDadosGerais (dataEmissao, codigoCliente, valorTotal)');
+    lQryAdicionaPedido.SQL.Add('values (:pDataEmissao, :pCodigoCliente, :pValorTotal)');
+
+    lQryAdicionaPedido.ParamByName('pDataEmissao').AsString := edtData.Text;
+    lQryAdicionaPedido.ParamByName('pCodigoCliente').AsString := edtCodigoCliente.Text;
+    lQryAdicionaPedido.ParamByName('pValorTotal').AsFloat := StrToFloat(ObterTotalDoPedido());
+
+    try
+      lQryAdicionaPedido.ExecSQL();
+      lQryAdicionaPedido.Transaction.Commit;
+      LimparCamposGeraisDoPedido();
+      edtCodigo.Enabled := True;
+      DM.qryConsultaPedidos.Refresh;
+    except
+      lQryAdicionaPedido.Transaction.Rollback;
+      raise Exception.Create('Ocorreu o erro ao cadastrar o pedido.');
+    end;
+  finally
+    FreeAndNil(lQryAdicionaPedido);
+  end;
+end;
+
+procedure TfrmPrincipalVendas.GravarProdutosDoPedido();
+var
+  lQryAdicionaPedido: TFDQuery;
+  lNumeroPedido: Integer;
+  lErro: Boolean;
+begin
+  lQryAdicionaPedido := TFDQuery.Create(Self);
+  lErro := False;
+
+  try
+    lQryAdicionaPedido.Connection := DM.Connection;
+    lQryAdicionaPedido.Transaction := DM.Transaction;
+
+    if not lQryAdicionaPedido.Transaction.Active then
+      lQryAdicionaPedido.Transaction.StartTransaction;
+
+    lQryAdicionaPedido.SQL.Add('insert into pedidosProdutos (numeroPedido, codigoProduto, quantidade, valorUnitario, valorTotal)');
+    lQryAdicionaPedido.SQL.Add('values (:pNumeroPedido, :pCodigoProduto, :pQuantidade, :pValorUnitario, :pValorTotal)');
+
+    lNumeroPedido := ObterNumeroDoPedido();
+
+    cdsProdutos.DisableControls;
+    cdsProdutos.First;
+
+    while not cdsProdutos.Eof and not lErro do
+    begin
+      lQryAdicionaPedido.ParamByName('pNumeroPedido').AsInteger := lNumeroPedido;
+      lQryAdicionaPedido.ParamByName('pCodigoProduto').AsString := cdsProdutos.FieldByName('codigoProduto').AsString;
+      lQryAdicionaPedido.ParamByName('pQuantidade').AsString := cdsProdutos.FieldByName('quantidade').AsString;
+      lQryAdicionaPedido.ParamByName('pValorUnitario').AsFloat := cdsProdutos.FieldByName('valorUnitario').AsFloat;
+      lQryAdicionaPedido.ParamByName('pValorTotal').AsFloat := cdsProdutos.FieldByName('valorTotal').AsFloat;
+
+      try
+        lQryAdicionaPedido.ExecSQL();
+        lQryAdicionaPedido.Transaction.Commit;
+
+        if not lQryAdicionaPedido.Transaction.Active then
+          lQryAdicionaPedido.Transaction.StartTransaction;
+      except
+        lQryAdicionaPedido.Transaction.Rollback;
+        lErro := True;
+      end;
+
+      cdsProdutos.Next;
+    end;
+
+    if lErro then
+      raise Exception.Create('Ocorreu o erro ao cadastrar o pedido.');
+  finally
+    cdsProdutos.First;
+    cdsProdutos.EnableControls;
+    cdsProdutos.EmptyDataSet;
+    LimparCamposProdutos();
+    edtCodigo.Enabled := True;
+    FreeAndNil(lQryAdicionaPedido);
+  end;
+
+end;
+
+procedure TfrmPrincipalVendas.grdPedidosKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  case Key of
+    VK_RETURN: begin
+                 edtCodigo.Text := cdsProdutos.FieldByName('codigoProduto').AsString;
+                 edtDescricao.Text := cdsProdutos.FieldByName('descricao').AsString;
+                 edtQuantidade.Text := cdsProdutos.FieldByName('quantidade').AsString;
+                 edtValor.Text := cdsProdutos.FieldByName('valorUnitario').AsString;
+                 FCodigoPedidoProdutos := cdsProdutos.FieldByName('codigo').AsInteger;
+                 edtCodigo.Enabled := False;
+                 edtQuantidade.SetFocus;
+               end;
+
+    VK_DELETE: begin
+                 if not cdsProdutos.IsEmpty then
+                   if MessageDlg('Confirma a exclusão do produto?', mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+                     cdsProdutos.Delete;
+
+               end;
+  end;
+
+end;
+
+procedure TfrmPrincipalVendas.LimparCamposGeraisDoPedido();
+begin
+  edtNumeroPedido.Clear;
+  edtData.Clear;
+  edtCodigoCliente.Clear;
+  edtNomeCliente.Clear;
+end;
+
+procedure TfrmPrincipalVendas.LimparCamposProdutos();
+begin
+  edtCodigo.Clear;
+  edtDescricao.Clear;
+  edtQuantidade.Clear;
+  edtValor.Clear;
+end;
+
+function TfrmPrincipalVendas.ObterTotalDoPedido(): String;
+var
+  lTotal: Double;
+begin
+  cdsProdutos.DisableControls;
+
+  try
+    cdsProdutos.First;
+    lTotal := 0;
+
+    while not cdsProdutos.Eof do
+    begin
+      lTotal := lTotal + cdsProdutos.FieldByName('valorTotal').AsFloat;
+      cdsProdutos.Next;
+    end;
+
+    Result := FormatFloat('0,00', lTotal);
+  finally
+    cdsProdutos.First;
+    cdsProdutos.EnableControls;
+  end;
+end;
+
+//function TfrmPrincipalVendas.ObterTotalDoPedido(): String;
+//var
+//  lQryTotalPedido: TFDQuery;
+//begin
+//  lQryTotalPedido := TFDQuery.Create(Self);
+//
+//  try
+//    lQryTotalPedido.Connection := DM.Connection;
+//    lQryTotalPedido.Transaction := DM.Transaction;
+//
+//    if not lQryTotalPedido.Transaction.Active then
+//      lQryTotalPedido.Transaction.StartTransaction;
+//
+//    lQryTotalPedido.SQL.Add('select sum(valorTotal) valorTotal');
+//    lQryTotalPedido.SQL.Add('from pedidos');
+//
+//    lQryTotalPedido.Open;
+//
+//    Result := lQryTotalPedido.FieldByName('valorTotal').AsString;
+//  finally
+//    lQryTotalPedido.Close;
+//    FreeAndNil(lQryTotalPedido);
+//  end;
+//end;
+
+procedure TfrmPrincipalVendas.spdCancelarPedidoClick(Sender: TObject);
+begin
+  if edtNumeroPedido.Text = '' then
+    begin
+      MessageDlg('Informe o número do pedido a ser cancelado.', mtInformation, [mbOk], 0);
+      edtNumeroPedido.SetFocus;
+      Abort;
+    end
+  else
+    CancelarPedido(edtNumeroPedido.Text);
+end;
+
+procedure TfrmPrincipalVendas.spdCarregarPedidoClick(Sender: TObject);
+begin
+  if edtNumeroPedido.Text = '' then
+    begin
+      MessageDlg('Informe o número do pedido a ser carregado.', mtInformation, [mbOk], 0);
+      edtNumeroPedido.SetFocus;
+      Abort;
+    end
+  else
+    CarregarPedido(edtNumeroPedido.Text)
+end;
+
+procedure TfrmPrincipalVendas.spdGravarPedidoClick(Sender: TObject);
+begin
+  if ValidarDadosGerais() then
+  begin
+    GravarDadosGeraisDoPedido();
+    GravarProdutosDoPedido();
+  end;
+end;
+
+function TfrmPrincipalVendas.ValidarCamposProdutos(): Boolean;
+var
+  lNumero: Integer;
+begin
+  try
+    lNumero := StrToInt(edtCodigo.Text);
+    Result := True;
+  except
+    Result := False;
+    MessageDlg('O código do produto não é válido. Verifique.', mtInformation, [mbOk], 0);
+    Abort;
+  end;
+
+  if lNumero = 0 then
+  begin
+    Result := False;
+    MessageDlg('O código do produto não é válido. Verifique.', mtInformation, [mbOk], 0);
+    Abort;
+  end;
+
+    try
+    lNumero := StrToInt(edtQuantidade.Text);
+    Result := True;
+  except
+    Result := False;
+    MessageDlg('A quantidade não é válida. Verifique.', mtInformation, [mbOk], 0);
+    Abort;
+  end;
+
+  if lNumero = 0 then
+  begin
+    Result := False;
+    MessageDlg('A quantidade não é válida. Verifique.', mtInformation, [mbOk], 0);
+    Abort;
+  end;
+
+end;
+
+function TfrmPrincipalVendas.ValidarDadosGerais(): Boolean;
+var
+  lNumero: Integer;
+  lData: TDate;
+begin
+  try
+    lData := StrToDate(edtData.Text);
+    Result := True;
+  except
+    Result := False;
+    MessageDlg('A data informada não é válida. Verifique.', mtInformation, [mbOk], 0);
+    Abort;
+  end;
+
+    try
+    lNumero := StrToInt(edtCodigoCliente.Text);
+    Result := True;
+  except
+    Result := False;
+    MessageDlg('O código do cliente não é válido. Verifique.', mtInformation, [mbOk], 0);
+    Abort;
+  end;
+
+  if lNumero = 0 then
+  begin
+    Result := False;
+    MessageDlg('O código do cliente não é válido. Verifique.', mtInformation, [mbOk], 0);
+    Abort;
+  end;
+end;
+
+end.

@@ -1,0 +1,32 @@
+unit DataModule;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def,
+  FireDAC.Phys, FireDAC.Comp.Client, Data.DBXMySQL, Data.DB, Data.SqlExpr,
+  Data.FMTBcd;
+
+type
+  TDM = class(TDataModule)
+    SQLConnection: TSQLConnection;
+    qryProdutos: TSQLQuery;
+    qryClientes: TSQLQuery;
+    qryPedidos: TSQLQuery;
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  DM: TDM;
+
+implementation
+
+{%CLASSGROUP 'Vcl.Controls.TControl'}
+
+{$R *.dfm}
+
+end.

@@ -1,0 +1,271 @@
+object frmPrincipalVendas: TfrmPrincipalVendas
+  Left = 0
+  Top = 0
+  BorderStyle = bsSingle
+  Caption = 'Vendas'
+  ClientHeight = 358
+  ClientWidth = 692
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  KeyPreview = True
+  OldCreateOrder = False
+  Position = poScreenCenter
+  OnClose = FormClose
+  OnKeyDown = FormKeyDown
+  OnKeyPress = FormKeyPress
+  OnShow = FormShow
+  PixelsPerInch = 96
+  TextHeight = 13
+  object spdGravarPedido: TSpeedButton
+    Left = 584
+    Top = 316
+    Width = 108
+    Height = 42
+    Align = alRight
+    Caption = 'Gravar Pedido'
+    OnClick = spdGravarPedidoClick
+    ExplicitLeft = 194
+    ExplicitHeight = 44
+  end
+  object spdCarregarPedido: TSpeedButton
+    Left = 97
+    Top = 316
+    Width = 487
+    Height = 42
+    Align = alClient
+    Caption = 'Carregar Pedido'
+    OnClick = spdCarregarPedidoClick
+    ExplicitLeft = 0
+    ExplicitTop = 365
+    ExplicitWidth = 97
+    ExplicitHeight = 147
+  end
+  object spdCancelarPedido: TSpeedButton
+    Left = 0
+    Top = 316
+    Width = 97
+    Height = 42
+    Align = alLeft
+    Caption = 'Cancelar Pedido'
+    OnClick = spdCancelarPedidoClick
+    ExplicitHeight = 44
+  end
+  object grpProduto: TGroupBox
+    Left = 0
+    Top = 73
+    Width = 692
+    Height = 224
+    Align = alTop
+    Caption = ' Informe o Produto: '
+    TabOrder = 0
+    object lblCodigoProduto: TLabel
+      Left = 8
+      Top = 25
+      Width = 41
+      Height = 13
+      Caption = 'C'#243'digo:'
+    end
+    object lblDescricao: TLabel
+      Left = 60
+      Top = 24
+      Width = 52
+      Height = 13
+      Caption = 'Descri'#231#227'o:'
+    end
+    object Label1: TLabel
+      Left = 264
+      Top = 24
+      Width = 64
+      Height = 13
+      Caption = 'Quantidade:'
+    end
+    object Label2: TLabel
+      Left = 341
+      Top = 24
+      Width = 74
+      Height = 13
+      Caption = 'Valor Unit'#225'rio:'
+    end
+    object btnAdicionar: TSpeedButton
+      Left = 429
+      Top = 43
+      Width = 84
+      Height = 22
+      Caption = 'Adicionar'
+      OnClick = btnAdicionarClick
+    end
+    object lblProdutosIncluidos: TLabel
+      Left = 8
+      Top = 77
+      Width = 100
+      Height = 13
+      Caption = 'Produtos inclu'#237'dos:'
+    end
+    object edtCodigo: TEdit
+      Left = 8
+      Top = 44
+      Width = 41
+      Height = 21
+      TabOrder = 0
+      OnChange = edtCodigoChange
+    end
+    object edtDescricao: TEdit
+      Left = 60
+      Top = 43
+      Width = 189
+      Height = 21
+      Enabled = False
+      TabOrder = 1
+    end
+    object edtQuantidade: TEdit
+      Left = 264
+      Top = 43
+      Width = 64
+      Height = 21
+      TabOrder = 2
+    end
+    object edtValor: TEdit
+      Left = 341
+      Top = 43
+      Width = 74
+      Height = 21
+      Enabled = False
+      TabOrder = 3
+    end
+    object grdPedidos: TDBGrid
+      Left = 8
+      Top = 98
+      Width = 673
+      Height = 120
+      DataSource = dtsProdutos
+      TabOrder = 4
+      TitleFont.Charset = DEFAULT_CHARSET
+      TitleFont.Color = clWindowText
+      TitleFont.Height = -11
+      TitleFont.Name = 'Segoe UI'
+      TitleFont.Style = []
+      OnKeyDown = grdPedidosKeyDown
+    end
+  end
+  object StatusBar: TStatusBar
+    Left = 0
+    Top = 297
+    Width = 692
+    Height = 19
+    Align = alTop
+    Panels = <>
+    SimplePanel = True
+  end
+  object grpDadosGeraisPedidos: TGroupBox
+    Left = 0
+    Top = 0
+    Width = 692
+    Height = 73
+    Align = alTop
+    Caption = 'Dados Gerais do Pedido: '
+    TabOrder = 2
+    object Label3: TLabel
+      Left = 71
+      Top = 24
+      Width = 87
+      Height = 13
+      Caption = 'Data da emiss'#227'o:'
+    end
+    object Label4: TLabel
+      Left = 165
+      Top = 24
+      Width = 39
+      Height = 13
+      Caption = 'Cliente:'
+    end
+    object Label5: TLabel
+      Left = 213
+      Top = 23
+      Width = 89
+      Height = 13
+      Caption = 'Nome do Cliente:'
+    end
+    object Label6: TLabel
+      Left = 8
+      Top = 24
+      Width = 55
+      Height = 13
+      Caption = 'N'#186' Pedido:'
+    end
+    object edtCodigoCliente: TEdit
+      Left = 165
+      Top = 43
+      Width = 41
+      Height = 21
+      TabOrder = 2
+      OnChange = edtCodigoClienteChange
+    end
+    object edtNomeCliente: TEdit
+      Left = 213
+      Top = 43
+      Width = 189
+      Height = 21
+      Enabled = False
+      TabOrder = 3
+    end
+    object edtData: TMaskEdit
+      Left = 71
+      Top = 43
+      Width = 87
+      Height = 21
+      EditMask = '!99/99/0000;1; '
+      MaxLength = 10
+      TabOrder = 1
+      Text = '  /  /    '
+    end
+    object edtNumeroPedido: TEdit
+      Left = 8
+      Top = 43
+      Width = 55
+      Height = 21
+      TabOrder = 0
+      OnChange = edtCodigoChange
+    end
+  end
+  object cdsProdutos: TClientDataSet
+    Aggregates = <>
+    Params = <>
+    Left = 584
+    Top = 105
+    object cdsProdutoscodigo: TIntegerField
+      AutoGenerateValue = arAutoInc
+      FieldName = 'codigo'
+      Visible = False
+    end
+    object cdsProdutoscodigoProduto: TIntegerField
+      DisplayLabel = 'C'#243'odigo do Produto'
+      FieldName = 'codigoProduto'
+    end
+    object cdsProdutosnomeProduto: TStringField
+      DisplayLabel = 'Nome do Produto'
+      FieldName = 'nomeProduto'
+      Size = 45
+    end
+    object cdsProdutosquantidade: TIntegerField
+      DisplayLabel = 'Quantidade'
+      FieldName = 'quantidade'
+    end
+    object cdsProdutosvalorUnitario: TCurrencyField
+      DisplayLabel = 'Valor Unit'#225'rio'
+      FieldName = 'valorUnitario'
+    end
+    object cdsProdutosvalorTotal: TCurrencyField
+      DisplayLabel = 'Valor Total'
+      FieldName = 'valorTotal'
+    end
+  end
+  object dtsProdutos: TDataSource
+    DataSet = cdsProdutos
+    Left = 536
+    Top = 89
+  end
+end

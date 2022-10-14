@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2022/10/10 13:58:13.000.512,=d:\ProjetosDelphi\Unit1.pas</Transaction>
+    <Transaction>2022/10/10 14:03:07.000.937,d:\ProjetosDelphi\Unit1.dfm=D:\ProjetosDelphi\Vendas\uVendas.dfm</Transaction>
+    <Transaction>2022/10/10 14:03:07.000.937,d:\ProjetosDelphi\Unit1.pas=D:\ProjetosDelphi\Vendas\uVendas.pas</Transaction>
+    <Transaction>2022/10/10 14:03:14.000.079,d:\ProjetosDelphi\Project1.dproj=D:\ProjetosDelphi\Vendas\Vendas.dproj</Transaction>
+    <Transaction>2022/10/11 13:04:01.000.974,=D:\ProjetosDelphi\Vendas\fonte\Unit1.pas</Transaction>
+    <Transaction>2022/10/11 13:30:39.000.734,D:\ProjetosDelphi\Vendas\fonte\Unit1.dfm=D:\ProjetosDelphi\Vendas\fonte\DataModule.dfm</Transaction>
+    <Transaction>2022/10/11 13:30:39.000.734,D:\ProjetosDelphi\Vendas\fonte\Unit1.pas=D:\ProjetosDelphi\Vendas\fonte\DataModule.pas</Transaction>
+  </Transactions>
+</BorlandProject>

@@ -1,0 +1,47 @@
+object DM: TDM
+  OldCreateOrder = False
+  Height = 280
+  Width = 415
+  object Connection: TFDConnection
+    Params.Strings = (
+      'Database=vendas'
+      'User_Name=root'
+      'Password=masterkey'
+      'Server=localhost'
+      'DriverID=MySQL')
+    Left = 184
+    Top = 152
+  end
+  object qryProdutos: TFDQuery
+    Connection = Connection
+    Transaction = Transaction
+    SQL.Strings = (
+      'select *'
+      'from produtos')
+    Left = 288
+    Top = 120
+  end
+  object qryPedidos: TFDQuery
+    Connection = Connection
+    Transaction = Transaction
+    SQL.Strings = (
+      'select *'
+      'from pedidos')
+    Left = 80
+    Top = 104
+  end
+  object qryClientes: TFDQuery
+    Connection = Connection
+    Transaction = Transaction
+    SQL.Strings = (
+      'select *'
+      'from clientes')
+    Left = 160
+    Top = 40
+  end
+  object Transaction: TFDTransaction
+    Connection = Connection
+    Left = 296
+    Top = 72
+  end
+end
